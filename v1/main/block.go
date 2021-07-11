@@ -1,14 +1,23 @@
 package main
 
-import "crypto/sha256"
+import (
+	"bytes"
+	"crypto/sha256"
+	"time"
+)
 
 const genesisInfo = "genesis block is created"
 
 // Block struct
 type Block struct {
+	Version       uint64 //区块版本号
 	PrevBlockHash []byte
+	MerkleRoot    []byte
+	TimeStamp     uint64
+	Difficulty    uint64
+	Nonce         uint64
+	Data          []byte
 	Hash          []byte
-	Data          []byte //数据，目前使用字节流，v4开始使用交易代替
 }
 
 // 创建区块，对Block的每一个字段填充数据即可
@@ -16,7 +25,11 @@ type Block struct {
 // NewBlock func
 func NewBlock(data string, prevBlockHash []byte) *Block {
 	block := &Block{
+		Version:       0,
 		PrevBlockHash: prevBlockHash,
+		TimeStamp:     uint64(time.Now().Unix()),
+		Difficulty:    10, //随便写的，v2再调整
+		Nonce:         10,
 		Data:          []byte(data),
 	}
 
@@ -28,9 +41,18 @@ func NewBlock(data string, prevBlockHash []byte) *Block {
 
 // SetHash func
 func (block *Block) SetHash() {
-	var data []byte
-	data = append(data, block.PrevBlockHash...)
-	data = append(data, block.Data...)
+	tmp := [][]byte{
+		uintToByte(block.Version),
+		block.PrevBlockHash,
+		block.MerkleRoot,
+		uintToByte(block.TimeStamp),
+		uintToByte(block.Difficulty),
+		uintToByte(block.Nonce),
+		block.Data,
+	}
+
+	data := bytes.Join(tmp, nil)
+
 	hash /*[32]byte*/ := sha256.Sum256(data)
 	block.Hash = hash[:]
 }
